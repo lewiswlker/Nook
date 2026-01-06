@@ -149,4 +149,27 @@
         order by id desc
         limit #{start}, #{limit}
     </select>
+
+    <!-- deleteRefreshToken --> 
+
+    <delete id="deleteRefreshToken">
+        delete from t_refresh_token
+        where refreshToken = #{refreshToken} and userId = #{userId}
+    </delete>
+
+    <insert id="addRefreshToken">
+        insert into t_refresh_token(refreshToken, userId, createTime)
+        values (#{refreshToken}, #{userId}, #{createTime})
+    </insert>    
+
+    <!-- getRefreshTokenDetail --> 
+
+    <select id="getRefreshTokenDetail" parameterType="java.lang.String" resultType="com.hku.barrage.domain.RefreshTokenDetail">
+        select
+            *
+        from
+            t_refresh_token
+        where
+            refreshToken = #{refreshToken}
+    </select>
 </mapper>

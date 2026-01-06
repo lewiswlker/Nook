@@ -9,6 +9,9 @@ target/
 *.iws
 *.iml
 *.ipr
+*.log
+*.rdb
+*.pem
 
 ### VS Code ###
 .vscode/

@@ -12,6 +12,12 @@
     <artifactId>barrage-api</artifactId>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.liubo</groupId>
             <artifactId>barrage-service</artifactId>

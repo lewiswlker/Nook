@@ -3,6 +3,7 @@ package com.hku.barrage.service;
 import com.alibaba.fastjson.JSONObject;
 import com.hku.barrage.dao.UserDao;
 import com.hku.barrage.domain.PageResult;
+import com.hku.barrage.domain.RefreshTokenDetail;
 import com.hku.barrage.domain.User;
 import com.hku.barrage.domain.UserInfo;
 import com.hku.barrage.domain.constant.UserConstant;
@@ -11,20 +12,27 @@ import com.hku.barrage.service.util.MD5Util;
 import com.hku.barrage.service.util.RSAUtil;
 import com.hku.barrage.service.util.TokenUtil;
 import com.mysql.cj.util.StringUtils;
+
+import ch.qos.logback.core.subst.Token;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-
 
 @Service
 public class UserService {
 
     @Autowired
     private UserDao userDao;
+
+    @Autowired
+    private UserAuthService userAuthService;
 
     public void addUser(User user) {
         String phone = user.getPhone();
@@ -59,6 +67,9 @@ public class UserService {
         userInfo.setCreateTime(now);
         userInfo.setUpdateTime(now);
         userDao.addUserInfo(userInfo);
+
+        // add default role
+        userAuthService.addUserDefaultRole(user.getId());
     }
 
     public User getUserByPhone(String phone) {
@@ -144,6 +155,65 @@ public class UserService {
             list = userDao.pageListUserInfos(params);
         }
         return new PageResult<>(total, list);
+    }
+
+    public Map<String, Object> loginForDts(User user) throws Exception {
+        String phone = user.getPhone() == null ? "" : user.getPhone();
+        String email = user.getEmail() == null ? "" : user.getEmail();
+        if (StringUtils.isNullOrEmpty(phone) && StringUtils.isNullOrEmpty(email)) {
+            throw new ConditionException("Login type is invalid!");
+        }
+        String phoneOrEmail = phone + email;
+        User dbUser = userDao.getUserByPhoneOrEmail(phoneOrEmail);
+        if (dbUser == null) {
+            throw new ConditionException("User is not exist!");
+        }
+        String password = dbUser.getPassword();
+        String rowPassword;
+        try {
+            rowPassword = RSAUtil.decrypt(user.getPassword());
+        } catch (Exception e) {
+            throw new ConditionException("Password is invalid!");
+        }
+        String salt = dbUser.getSalt();
+        String md5Password = MD5Util.sign(rowPassword, salt, "UTF-8");
+        if (!md5Password.equals(dbUser.getPassword())) {
+            throw new ConditionException("Password is wrong!");
+        }
+        Long userId = dbUser.getId();
+        String accessToken = TokenUtil.generateToken(userId);
+        String refreshToken = TokenUtil.generateRefreshToken(userId);
+        userDao.deleteRefreshToken(refreshToken, userId);
+        userDao.addRefreshToken(refreshToken, userId, new Date());
+        Map<String, Object> map = new HashMap<>();
+        map.put("accessToken", accessToken);
+        map.put("refreshToken", refreshToken);
+        return map;
+    }
+
+    public void logout(String refreshToken, Long userId) {
+        userDao.deleteRefreshToken(refreshToken, userId);
+    }
+
+    public String refreshAccessToken(String refreshToken) throws Exception {
+        RefreshTokenDetail refreshTokenDetail = userDao.getRefreshTokenDetail(refreshToken);
+        if (refreshTokenDetail == null) {
+            throw new ConditionException("555", "Token is expired!");
+        }
+
+        Long userId;
+        try {
+            userId = TokenUtil.verifyToken(refreshToken);
+        } catch (ConditionException e) {
+            userDao.deleteRefreshToken(refreshToken, refreshTokenDetail.getUserId());
+            throw e;
+        }
+
+        if (!userId.equals(refreshTokenDetail.getUserId())) {
+            throw new ConditionException("Token userId mismatch!");
+        }
+
+        return TokenUtil.generateToken(userId);
     }
 
 }

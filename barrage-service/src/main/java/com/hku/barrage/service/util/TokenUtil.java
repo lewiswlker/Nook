@@ -3,7 +3,6 @@ package com.hku.barrage.service.util;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.exceptions.TokenExpiredException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.hku.barrage.domain.exception.ConditionException;
@@ -21,7 +20,20 @@ public class TokenUtil {
         );
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());
-        calendar.add(Calendar.MINUTE, 5);
+        calendar.add(Calendar.HOUR, 3);
+        return JWT.create().withKeyId(String.valueOf(userId))
+                .withIssuer(ISSUER)
+                .withExpiresAt(calendar.getTime())
+                .sign(algorithm);
+    }
+    
+    public static String generateRefreshToken(Long userId) throws Exception {
+        Algorithm algorithm = Algorithm.RSA256(
+                RSAUtil.getPublicKey(), RSAUtil.getPrivateKey()
+        );
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(new Date());
+        calendar.add(Calendar.DATE, 7);
         return JWT.create().withKeyId(String.valueOf(userId))
                 .withIssuer(ISSUER)
                 .withExpiresAt(calendar.getTime())
@@ -49,4 +61,5 @@ public class TokenUtil {
         }
         return Long.valueOf(userId);
     }
+
 }

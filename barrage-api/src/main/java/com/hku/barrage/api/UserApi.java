@@ -11,9 +11,15 @@ import com.hku.barrage.service.UserService;
 import com.hku.barrage.service.util.RSAUtil;
 
 import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 @RestController
 public class UserApi {
@@ -83,6 +89,30 @@ public class UserApi {
         }
         return new JsonResponse<>(result);
     }
+
+    @PostMapping("/user-dts")
+    public JsonResponse<Map<String, Object>> loginForDts(@RequestBody User user) throws Exception {
+        Map<String, Object> map = userService.loginForDts(user);
+        return new JsonResponse<>(map);
+    }
+
+    @DeleteMapping("/refresh-tokens")
+    public JsonResponse<String> logout(HttpServletRequest request) {
+        String refreshToken = request.getHeader("refreshToken");
+        Long userId = userSupport.getCurrentUserId();
+        userService.logout(refreshToken, userId);
+        return JsonResponse.success();
+    }
+
+    @PostMapping("/access-token")
+    public JsonResponse<String> refreshAccessToken(HttpServletRequest request) throws Exception {
+        String refreshToken = request.getHeader("refreshToken");
+        String accessToken = userService.refreshAccessToken(refreshToken);
+        return new JsonResponse<>(accessToken);
+    }
+    
+
+    
 
 
 }
