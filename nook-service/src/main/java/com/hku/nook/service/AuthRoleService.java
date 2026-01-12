@@ -1,0 +1,38 @@
+package com.hku.nook.service;
+
+import java.util.List;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.hku.nook.dao.AuthRoleDao;
+import com.hku.nook.domain.auth.AuthRole;
+import com.hku.nook.domain.auth.AuthRoleElementOperation;
+import com.hku.nook.domain.auth.AuthRoleMenu;
+
+@Service
+public class AuthRoleService {
+
+    @Autowired
+    private AuthRoleElementOperationService authRoleElementOperationService;
+
+    @Autowired
+    private AuthRoleMenuService authRoleMenuService;
+
+    @Autowired
+    private AuthRoleDao authRoleDao;
+
+    public List<AuthRoleElementOperation> getRoleElementOperationsByRoleIds(Set<Long> roleIdSet) {
+        return authRoleElementOperationService.getRoleElementOperationsByRoleIds(roleIdSet);
+    }
+
+    public List<AuthRoleMenu> getRoleMenusByRoleIds(Set<Long> roleIdSet) {
+        return authRoleMenuService.getRoleMenusByRoleIds(roleIdSet);
+    }
+
+    public AuthRole getRoleByCode(String code) {
+        return authRoleDao.getRoleByCode(code);
+    }
+
+}

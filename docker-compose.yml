@@ -1,0 +1,50 @@
+name: nook
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.12.1
+    container_name: nook-es
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.12.1
+    container_name: nook-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+
+  fastdfs-tracker:
+    image: delron/fastdfs
+    platform: linux/amd64
+    container_name: nook-fastdfs-tracker
+    command: tracker
+    ports:
+      - "22122:22122"
+
+  fastdfs-storage:
+    image: delron/fastdfs
+    platform: linux/amd64
+    container_name: nook-fastdfs-storage
+    command: storage
+    environment:
+      - TRACKER_SERVER=fastdfs-tracker:22122
+      - GROUP_NAME=group1
+    ports:
+      - "23000:23000"
+      - "8888:8888"
+    depends_on:
+      - fastdfs-tracker
+
+volumes:
+  es-data:

@@ -12,6 +12,10 @@ target/
 *.log
 *.rdb
 *.pem
+AGENTS.md
+Tavily.md
+Zhipu.md
+nook-api/src/main/resources/application-local.properties
 
 ### VS Code ###
 .vscode/
